@@ -1,0 +1,50 @@
+# Node.js with Angular on Linux Web App
+# Build a Node.js project using Angular and deploy it to Azure as a Linux web app.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+
+on:
+  push:
+    branches:
+      - master
+
+name: Build and deploy Node.js with Angular on Linux Web App
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    # checkout the repo
+    - uses: actions/checkout@master
+
+    # login using azure credentials
+    - uses: azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_CREDENTIALS_GITHUB_SECRET_c741}}
+
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 14.x
+
+    # install dependencies, build, and test
+    - name: npm install, build
+      working-directory: config/heroku
+      run: |
+        npm install -g @angular/cli
+        npm install
+        ng build --prod
+
+    - uses: azure/appservice-settings@v1
+      with:
+        app-name: td-testwap1
+        general-settings-json: '{"linuxFxVersion": "NODE|14-lts"}' #'General configuration settings as Key Value pairs'
+
+    # deploy web app
+    - uses: azure/webapps-deploy@v1
+      with:
+        app-name: td-testwap1
+        package: config/heroku
+
+    # Azure logout
+    - name: logout
+      run: |
+        az logout
